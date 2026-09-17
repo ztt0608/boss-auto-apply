@@ -1,6 +1,7 @@
 # 运行产物（含个人数据，勿上传）
 candidates.json
 candidates.json.bak_*
+candidates.archived_*.json
 boss_sends.db
 boss_run_*.log
 boss_run_latest.log
