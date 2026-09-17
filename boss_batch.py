@@ -4,7 +4,7 @@ Boss 直聘 - 拟人化批量「立即沟通」 v12(两天扫一次·单次扫11
 薪资在详情页为明文，列表页被自定义字体混淆 -> 进详情页读真实薪资再决定是否点击。
 城市：四省优先（福建9市/广东21市/浙江11市/北京 全省每一个市都搜，city 码取自 BOSS 官方 city.json），其余全国主要城市兜底（上海/成都/武汉/长沙/苏州/重庆/天津/西安/南京/郑州/青岛/合肥/昆明/沈阳/济南 + BOSS 全国聚合码 100010000）
 关键词（13个）：桌面运维 / 网络工程师 / 系统运维 / 运维 / 弱电 / 网络管理员 / Linux运维 / 云计算运维 / 云原生 / SRE / 平台运维 / 服务器运维 / IT运维
-薪资：月薪 3-8K（下限≥3K、上限≤8K）或 日薪 ≥100元/天（≤1500元/天）
+薪资：月薪 3-8K 或 日薪 ≥100 元/天 —— 以上均为【默认值】，实际以同目录 config.json 为准（双击 setup.bat 生成）
 实习/应届优先：先尽量投面向实习生/应届生的岗位，再用普通岗补足到 TARGET；二者都接受
 区域优先：四省城市排在最前，全国城市仅用于兜底补足到 TARGET
 HR 活跃度：至少三天内在线（今日/刚刚/昨日/3日内等），超期或未知则跳过
@@ -296,13 +296,29 @@ CITY = {
     # BOSS 全国聚合搜索码
     "全国": "100010000",
 }
+# ---------------------------------------------------------------------------
+# 过滤参数默认值（下同）。这些值会被同目录的 config.json 覆盖，
+# 见文件后部「用户配置注入」一节；不提供 config.json 时即按这里的默认值运行。
+# ---------------------------------------------------------------------------
+SAL_FILTER_ON = True          # 是否启用薪资筛选
+SAL_MIN_MONTH, SAL_MAX_MONTH = 3, 8      # 月薪(K)：整体需落在 [min, max]
+SAL_MIN_DAY, SAL_MAX_DAY = 100, 1500     # 日薪(元/天)：整体需落在 [min, max]
+HR_ACTIVE_DAYS = 3            # HR 活跃度：只投 N 天内在线
+EXCLUDE_KEYWORDS = []         # 职位标题含这些词则跳过（用户可配）
+INTERN_KEYWORDS = ["实习", "应届", "在校", "校招", "毕业生", "校园招聘", "实习生"]
+INTERN_REGEX = r"\d+届"       # 补充正则，匹配「2027届」这类写法
+DO_SHUFFLE = True             # 城市/关键词顺序是否随机打乱（降低机器痕迹）
+
 def sal_ok(s):
-    if not s: return False
+    if not s:
+        return not SAL_FILTER_ON   # 不筛薪资时，读不到薪资也算通过
+    if not SAL_FILTER_ON:
+        return True
     if s.get("type") == "day":
-        # 日薪：接受 100元/天 及以上（用户要求的"100或几百一天"），上限 1500元/天 防异常
-        return s["low"] >= 100 and s["high"] <= 1500
-    # 月薪：整体落在 3-8K 区间（下限≥3K、上限≤8K），覆盖 4-8K/5-8K/6-8K/7-8K 等学生岗
-    return s["low"] >= 3 and s["high"] <= 8
+        # 日薪：整体落在配置区间内
+        return s["low"] >= SAL_MIN_DAY and s["high"] <= SAL_MAX_DAY
+    # 月薪：整体落在配置区间内
+    return s["low"] >= SAL_MIN_MONTH and s["high"] <= SAL_MAX_MONTH
 
 def read_active():
     # HR 活跃度：详情页 span.boss-active-time，如「3日内活跃」「今日活跃」「本周活跃」
@@ -322,28 +338,29 @@ def read_active():
     })();
     ''')
 def active_ok(text):
-    # HR 活跃度至少三天内在线
+    # HR 活跃度：只投 HR_ACTIVE_DAYS 天内在线（天数可在 config.json 调整）
     if not text: return False
     t = text
-    # 明确超 3 天
+    # 明确超期
     if any(k in t for k in ["本周","本月","上周","上月"]): return False
     if "周前" in t or "月前" in t: return False
     m = re.search(r'(\d+)\s*天前', t)
-    if m and int(m.group(1)) > 3: return False
+    if m and int(m.group(1)) > HR_ACTIVE_DAYS: return False
     m = re.search(r'(\d+)\s*小时前', t)
-    if m and int(m.group(1)) > 72: return False
-    # 命中以下任一即为三天内
-    if any(k in t for k in ["刚刚","今日","今天","昨日","昨天","前天","3日内","近3日","天内","小时内","分钟前"]): return True
-    if m and int(m.group(1)) <= 72: return True
+    if m and int(m.group(1)) > HR_ACTIVE_DAYS * 24: return False
+    # 命中以下任一即为期限内
+    if any(k in t for k in ["刚刚","今日","今天","昨日","昨天","前天","天内","小时内","分钟前"]): return True
+    if any(k in t for k in ["%d日内" % HR_ACTIVE_DAYS, "近%d日" % HR_ACTIVE_DAYS]): return True
+    if m and int(m.group(1)) <= HR_ACTIVE_DAYS * 24: return True
     return False  # 含“活跃”但格式未知 -> 保守跳过
 
 def list_active_ok(text):
-    # 列表页 HR 预筛（只用于"省一次详情页打开"）：仅丢弃【明确超3天】的岗；
-    # 空/未知一律保留，交详情页 active_ok 再判，避免在列表页误杀三天内的岗
+    # 列表页 HR 预筛（只用于"省一次详情页打开"）：仅丢弃【明确超期】的岗；
+    # 空/未知一律保留，交详情页 active_ok 再判，避免在列表页误杀期限内的岗
     if not text: return True
     if any(k in text for k in ["本周","本月","上周","上月","周前","月前"]): return False
     m = re.search(r'(\d+)\s*天前', text)
-    if m and int(m.group(1)) > 3: return False
+    if m and int(m.group(1)) > HR_ACTIVE_DAYS: return False
     m = re.search(r'(\d+)\s*月前', text)
     if m and int(m.group(1)) > 0: return False
     return True
@@ -356,9 +373,15 @@ def read_job_text():
     })();
     ''')
 def intern_ok(text):
-    # 仅投递面向实习生 / 应届生的岗位
+    # 判定是否为「实习 / 应届」类岗位（关键词与正则均可在 config.json 调整）
     if not text: return False
-    return bool(re.search(r'实习|应届|在校|校招|毕业生|\d+届|校园招聘|实习生', text))
+    if any(k in text for k in INTERN_KEYWORDS): return True
+    if INTERN_REGEX:
+        try:
+            return bool(re.search(INTERN_REGEX, text))
+        except re.error:
+            return False
+    return False
 
 PARSE_HREFS = '''
 (function(){
@@ -390,8 +413,9 @@ def collect_hrefs(capA=320, capB=120, per_combo=2):
     # 城市/关键词顺序同层随机打乱，避免固定"按城市顺序遍历"的机器痕迹
     hrefs = []; seen = set()
     def grab(cities, cap, tag):
-        cities_shuf = cities[:]; random.shuffle(cities_shuf)
-        kws_shuf = KEYWORDS[:]; random.shuffle(kws_shuf)
+        cities_shuf = cities[:]; kws_shuf = KEYWORDS[:]
+        if DO_SHUFFLE:
+            random.shuffle(cities_shuf); random.shuffle(kws_shuf)
         for city in cities_shuf:
             if len(hrefs) >= cap: break
             code = CITY[city]
@@ -409,6 +433,8 @@ def collect_hrefs(capA=320, capB=120, per_combo=2):
                     if added >= per_combo: break
                     if c["href"] in seen: continue
                     if not any(k in c["title"] for k in KEYWORDS): continue
+                    if EXCLUDE_KEYWORDS and any(k in c["title"] for k in EXCLUDE_KEYWORDS):
+                        continue  # 命中排除词：职位标题里带这些词就不要（如「销售」）
                     # 列表页预筛：HR 明确超3天的不收集，省一次详情页打开（未知/空保留，详情页再判）
                     if not list_active_ok(c.get("active", "")):
                         continue
@@ -517,6 +543,56 @@ def today_str():
     return time.strftime("%Y-%m-%d")
 
 POOL_MAX_AGE_DAYS = 2  # 候选池复用窗口：两天扫一次（扫描最耗流量，降频以稳风控）
+
+# ===========================================================================
+# 用户配置注入：读取同目录下的 config.json，覆盖上面的全部默认值。
+#   · 没有 config.json 时 -> 完全按默认值运行（与原始版本行为一致）
+#   · 生成配置 -> 双击 setup.bat（交互式向导）或复制 config.example.json 自行编辑
+# ===========================================================================
+_CFG = None
+try:
+    sys.path.insert(0, _HERE)
+    import job_config as _jc
+    _CFG = _jc.load(_HERE)
+except Exception as _e:
+    print("[config] 配置模块加载失败，改用内置默认值：%r" % (_e,), flush=True)
+
+if _CFG:
+    TARGET          = int(_CFG["daily_target"])
+    PRIORITY_INTERN = bool(_CFG["intern_priority"])
+    MAX_SCAN        = int(_CFG["max_scan_pages"])
+    POOL_CAP        = int(_CFG["pool_capacity"])
+    POOL_MAX_AGE_DAYS = int(_CFG["pool_max_age_days"])
+    KEYWORDS        = list(_CFG["keywords"])
+    EXCLUDE_KEYWORDS = list(_CFG["exclude_keywords"])
+    INTERN_KEYWORDS = list(_CFG["intern_keywords"])
+    INTERN_REGEX    = _CFG["intern_regex"]
+    HR_ACTIVE_DAYS  = int(_CFG["hr_active_days"])
+    DO_SHUFFLE      = bool(_CFG["shuffle"])
+    SAL_FILTER_ON   = bool(_CFG["salary"]["enabled"])
+    SAL_MIN_MONTH   = _CFG["salary"]["min_month"]
+    SAL_MAX_MONTH   = _CFG["salary"]["max_month"]
+    SAL_MIN_DAY     = _CFG["salary"]["min_day"]
+    SAL_MAX_DAY     = _CFG["salary"]["max_day"]
+    CITY.update(_CFG.get("city_codes") or {})
+    TIER1 = list(_CFG["cities_priority"])
+    TIER2 = list(_CFG["cities_backup"])
+
+    # 城市必须查得到编码，否则收集阶段会 KeyError -> 这里提前拦下并给人话提示
+    _missing = [c for c in (TIER1 + TIER2) if c not in CITY]
+    if _missing:
+        print("[config] !! 以下城市查不到编码，已跳过：%s" % "、".join(_missing), flush=True)
+        print("[config]    解决：重跑 setup.bat（联网可自动查编码），或在 config.json 的 "
+              "city_codes 里以 \"城市名\": \"编码\" 补上。", flush=True)
+        TIER1 = [c for c in TIER1 if c in CITY]
+        TIER2 = [c for c in TIER2 if c in CITY]
+    if not TIER1 and not TIER2:
+        raise SystemExit("[config] 没有任何可用城市，请运行 setup.bat 重新配置后再运行。")
+
+    log("=== 本次运行配置（来源：config.json）===")
+    for _line in _jc.summary_lines(_CFG):
+        log("  " + _line)
+    log("  实际可用：优先城市 %d 个 / 兜底城市 %d 个" % (len(TIER1), len(TIER2)))
 
 def _days_since(date_str):
     try:
@@ -721,7 +797,9 @@ def process():
     log("本次批次目标 BOSS_BATCH=%d" % batch)
     db_init()
     # 连续"点了没反馈"达到该阈值即优雅止损（此前会一路空点到池子耗尽，约 70 分钟纯空转）
-    THROTTLE_STOP = int(os.environ.get("BOSS_THROTTLE_STOP", 8))
+    # 默认值来自 config.json 的 throttle_stop；环境变量优先级更高
+    _thr_default = int(_CFG["throttle_stop"]) if _CFG else 8
+    THROTTLE_STOP = int(os.environ.get("BOSS_THROTTLE_STOP", _thr_default))
     consec_fail = 0
     login_check_n = 0
     data = load_candidates()

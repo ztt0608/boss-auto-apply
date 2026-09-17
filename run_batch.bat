@@ -25,6 +25,14 @@ if errorlevel 1 (
     exit /b 1
 )
 
+if not exist "config.json" (
+    echo [WARN] config.json not found - built-in defaults will be used.
+    echo        The defaults target IT / operations jobs, which may not match you.
+    echo        Run setup.bat to configure your own keywords, cities and salary.
+    echo.
+    timeout /t 5 >nul
+)
+
 echo Batch target: %BATCH%. Running now (17 items takes ~25-30 min, keep this window open)...
 %PY% boss_batch.py > boss_run_latest.log 2>&1
 echo.

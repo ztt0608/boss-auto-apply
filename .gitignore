@@ -9,6 +9,11 @@ batch_*.png
 edge_profile/
 feishu_webhook.txt
 feishu_secret.txt
+
+# 个人配置（每个人的岗位方向/城市都不同，不该提交；模板见 config.example.json）
+config.json
+config.json.bak
+
 __pycache__/
 *.pyc
 python-3.12.8-amd64.exe

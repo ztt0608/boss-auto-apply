@@ -1,0 +1,51 @@
+{
+  "_说明": "这是配置模板。推荐双击 setup.bat 交互式生成 config.json（会自动查城市编码）；也可以把这个文件复制成 config.json 自己改。改完保存即可生效，不用动任何代码。",
+  "_说明_关键词": "决定去搜索什么岗位。写得越贴近你的岗位名称越准，建议 3~15 个，宁多勿少。",
+  "_说明_排除词": "职位标题里出现这些词就跳过，用来挡掉你不想要的岗位类型。",
+  "_说明_城市": "cities_priority 是优先投递的城市；cities_backup 是优先城市招不满时的兜底城市。city_codes 填城市编码（Boss 网页搜索某城市时，网址里 city= 后面那串数字）。",
+  "_说明_薪资": "enabled 为 false 表示不看薪资。min_month/max_month 单位是 K（千元/月）；min_day/max_day 单位是元/天（兼职日结岗）。判定规则：薪资整体落在区间内才算符合。",
+  "_说明_HR活跃度": "只投最近 N 天内活跃的 HR。数值越大候选越多但回复率越低，建议 3。",
+  "_说明_候选池": "pool_max_age_days：候选池复用几天后重新扫描（扫描最耗访问量，不建议调小）。pool_capacity：单次扫描最多收集多少合格岗位。max_scan_pages：单次扫描最多打开多少详情页。",
+  "_说明_实习应届": "intern_priority 为 true 时优先投实习/应届岗，再用普通岗补足目标量。intern_keywords 是判定关键词，intern_regex 是补充正则（默认匹配「2027届」这类写法）。非在校生可设为 false。",
+  "_说明_节奏": "daily_target 是每天计划投递总数，batch_counts 是分几批、每批多少个，throttle_stop 是连续多少次点击无响应就停止（判定被限流）。建议每天不超过 50。",
+
+  "keywords": ["后端开发", "Java开发", "Python开发", "测试工程师"],
+  "exclude_keywords": ["销售", "外包", "驻场"],
+
+  "cities_priority": ["北京", "上海", "深圳", "杭州", "广州"],
+  "cities_backup": ["成都", "武汉", "南京", "西安"],
+  "city_codes": {
+    "北京": "101010100",
+    "上海": "101020100",
+    "深圳": "101280600",
+    "杭州": "101210100",
+    "广州": "101280100",
+    "成都": "101270100",
+    "武汉": "101200100",
+    "南京": "101190100",
+    "西安": "101110100"
+  },
+
+  "salary": {
+    "enabled": true,
+    "min_month": 8,
+    "max_month": 20,
+    "min_day": 100,
+    "max_day": 1500
+  },
+
+  "hr_active_days": 3,
+
+  "intern_priority": false,
+  "intern_keywords": ["实习", "应届", "在校", "校招", "毕业生", "校园招聘", "实习生"],
+  "intern_regex": "\\d+届",
+
+  "daily_target": 50,
+  "batch_counts": [17, 17, 16],
+  "throttle_stop": 8,
+
+  "pool_max_age_days": 2,
+  "pool_capacity": 110,
+  "max_scan_pages": 500,
+  "shuffle": true
+}
