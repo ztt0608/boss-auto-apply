@@ -139,16 +139,16 @@
 
 | 函数 | 行号 | 作用 |
 |---|---|---|
-| `ensure_foreground()` | 72 | 把 Edge 窗口拉到前台（页面不在前台时合成输入会被系统丢弃） |
-| `human_click()` | 151 | 拟人化点击：先移动到目标坐标再按下 |
-| `read_salary()` | 233 | 从详情页读取明文薪资 |
-| `sal_ok()` | 312 | 薪资过滤：月薪 3–8K 或日薪 ≥100 元 |
-| `active_ok()` | 340 | HR 活跃度过滤：三天内在线 |
-| `intern_ok()` | 375 | 实习/应届岗识别（关键词与正则可配） |
-| `scan_candidate()` | 451 | 扫描单个候选并判定是否合格 |
-| `click_candidate()` | 484 | 投递单个候选（点击「立即沟通」） |
-| `db_log_send()` | 651 | 投递结果写入 SQLite |
-| `push_feishu()` | 688 | 可选：日报推送飞书 |
+| `ensure_foreground()` | 92 | 把 Edge 窗口拉到前台（页面不在前台时合成输入会被系统丢弃） |
+| `human_click()` | 171 | 拟人化点击：先移动到目标坐标再按下 |
+| `read_salary()` | 253 | 从详情页读取明文薪资 |
+| `sal_ok()` | 332 | 薪资过滤（区间可在 config.json 配置） |
+| `active_ok()` | 360 | HR 活跃度过滤（天数可在 config.json 配置） |
+| `intern_ok()` | 395 | 实习/应届岗识别（关键词与正则可配） |
+| `scan_candidate()` | 471 | 扫描单个候选并判定是否合格 |
+| `click_candidate()` | 504 | 投递单个候选（点击「立即沟通」） |
+| `db_log_send()` | 661 | 投递结果写入 SQLite |
+| `push_feishu()` | 698 | 可选：日报推送飞书 |
 
 ---
 
@@ -448,13 +448,13 @@ Windows 自带「任务计划程序」即可实现每天 3 批自动运行：
 | 每日投递上限 `TARGET` | 19 |
 | 实习/应届优先 `PRIORITY_INTERN` | 20 |
 | 扫描详情页上限 `MAX_SCAN` / 候选池容量 `POOL_CAP` | 21 / 22 |
-| 关键词 `KEYWORDS` | 254 |
-| 优先城市 `TIER1` / 兜底城市 `TIER2` / 城市编码 `CITY` | 263 / 274 / 278 |
-| 薪资区间 `SAL_MIN_MONTH` 等四个变量 | 303 |
-| HR 活跃天数 `HR_ACTIVE_DAYS` / 排除词 `EXCLUDE_KEYWORDS` | 306 / 307 |
-| 候选池复用天数 `POOL_MAX_AGE_DAYS` | 545 |
+| 关键词 `KEYWORDS` | 274 |
+| 优先城市 `TIER1` / 兜底城市 `TIER2` / 城市编码 `CITY` | 283 / 294 / 298 |
+| 薪资区间 `SAL_FILTER_ON`、`SAL_MIN_MONTH` 等 | 323 |
+| HR 活跃天数 `HR_ACTIVE_DAYS` / 排除词 `EXCLUDE_KEYWORDS` | 326 / 327 |
+| 候选池复用天数 `POOL_MAX_AGE_DAYS` | 565 |
 
-> 一般不需要动这些 —— 改 `config.json` 就够了。
+> 一般不需要动这些 —— 改 `config.json` 就够了。行号仅供参考：代码一变就会偏移，**在编辑器里直接搜索变量名（如 `TARGET`、`KEYWORDS`）更可靠**。
 
 ## 七、命令行进阶用法
 

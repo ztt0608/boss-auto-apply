@@ -42,6 +42,26 @@ def _pick_page_ws():
         pass
     return None
 
+# ===========================================================================
+# 用户配置预检：先把同目录的 config.json 读进来并打印配置摘要。
+# 特意放在「连接浏览器」之前 —— 这样配置写错时能立刻看到明确提示，
+# 而不是先撞上「连不上 Edge」的报错，排查方向被带偏。
+# 真正的赋值在文件后部「用户配置注入」一节。
+# ===========================================================================
+_CFG = None
+_jc = None
+try:
+    sys.path.insert(0, _HERE)
+    import job_config as _jc
+    _CFG = _jc.load(_HERE)
+except Exception as _e:
+    print("[config] 配置模块加载失败，改用内置默认值：%r" % (_e,), flush=True)
+
+if _CFG:
+    print("=== 本次运行配置（来源：config.json）===", flush=True)
+    for _line in _jc.summary_lines(_CFG):
+        print("  " + _line, flush=True)
+
 WS = sys.argv[1] if len(sys.argv) > 1 else None
 if not WS or "devtools/browser" in WS:
     WS = _pick_page_ws()
@@ -545,19 +565,12 @@ def today_str():
 POOL_MAX_AGE_DAYS = 2  # 候选池复用窗口：两天扫一次（扫描最耗流量，降频以稳风控）
 
 # ===========================================================================
-# 用户配置注入：读取同目录下的 config.json，覆盖上面的全部默认值。
+# 用户配置注入：把前面读到的 config.json 落到各参数上（读取与摘要打印见文件
+# 前部「用户配置预检」一节）。
 #   · 没有 config.json 时 -> 完全按默认值运行（与原始版本行为一致）
 #   · 生成配置 -> 双击 setup.bat（交互式向导）或复制 config.example.json 自行编辑
 # ===========================================================================
-_CFG = None
-try:
-    sys.path.insert(0, _HERE)
-    import job_config as _jc
-    _CFG = _jc.load(_HERE)
-except Exception as _e:
-    print("[config] 配置模块加载失败，改用内置默认值：%r" % (_e,), flush=True)
-
-if _CFG:
+if _CFG and _jc:
     TARGET          = int(_CFG["daily_target"])
     PRIORITY_INTERN = bool(_CFG["intern_priority"])
     MAX_SCAN        = int(_CFG["max_scan_pages"])
@@ -589,9 +602,6 @@ if _CFG:
     if not TIER1 and not TIER2:
         raise SystemExit("[config] 没有任何可用城市，请运行 setup.bat 重新配置后再运行。")
 
-    log("=== 本次运行配置（来源：config.json）===")
-    for _line in _jc.summary_lines(_CFG):
-        log("  " + _line)
     log("  实际可用：优先城市 %d 个 / 兜底城市 %d 个" % (len(TIER1), len(TIER2)))
 
 def _days_since(date_str):
