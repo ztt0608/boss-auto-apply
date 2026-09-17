@@ -1,0 +1,14 @@
+# 运行产物（含个人数据，勿上传）
+candidates.json
+candidates.json.bak_*
+boss_sends.db
+boss_run_*.log
+boss_run_latest.log
+日报_*.md
+batch_*.png
+edge_profile/
+feishu_webhook.txt
+feishu_secret.txt
+__pycache__/
+*.pyc
+python-3.12.8-amd64.exe
