@@ -15,14 +15,14 @@ HR 活跃度：至少三天内在线（今日/刚刚/昨日/3日内等），超�
 import json, sys, time, urllib.parse, random, re, os
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
-SAVE_DIR = _HERE  # 自动等于本脚本所在目录（已迁移至 G:\agent\workbuddy\2026-08-08-13-27-20，无需写死）
+SAVE_DIR = _HERE  # 自动等于本脚本所在目录（便携设计：不写死盘符，整个文件夹拷到哪都可用）
 TARGET = 50  # 每日目标：月薪3-8K或日薪≥100元/天；HR三天内在线；实习/应届优先；最多投50个（两天扫一次、单次扫110，一天投50）
 PRIORITY_INTERN = True  # 实习/应届优先：先投实习/应届岗，再用普通岗补足到 TARGET
 MAX_SCAN = 500  # 扫描阶段最多打开的候选详情页数上限（收满~110合格约需~450次详情，留余量到500，8/17配合POOL_CAP=110调高）
 POOL_CAP = TARGET * 2 + 10  # 每次扫描收集上限 = 110（100 正投两天 + 10 容错，用户方案 8/17）
 
 import urllib.request
-# 2026-09-15：运行环境存在 HTTP_PROXY/HTTPS_PROXY（如 http://127.0.0.1:59471），
+# 注意：如果运行环境存在 HTTP_PROXY/HTTPS_PROXY 环境变量（本机装有代理软件时很常见），
 # 裸 urlopen 会把 127.0.0.1 也送去代理，返回 502 Bad Gateway，表现为"Edge 未就绪"的假故障。
 # 故此处强制禁用代理直连本机调试端口（CDP 永远不该走代理）。
 _CDP_OPENER = urllib.request.build_opener(urllib.request.ProxyHandler({}))

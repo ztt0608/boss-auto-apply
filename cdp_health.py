@@ -38,7 +38,7 @@ if target is None:
     print("[2] 未找到 zhipin 页面 target（当前 %d 个 page target）" % len(pages))
     for t in pages:
         print("    - %s" % (t.get("url") or "")[:80])
-    print("    → 需整实例重启 Edge（杀命令行含 boss_debug_profile 的进程后重开）")
+    print("    → 需整实例重启 Edge（关闭所有使用本包 profile 目录的 Edge 进程后重开）")
     sys.exit(3)
 print("[2] zhipin 页面：%s" % target["url"][:80])
 
